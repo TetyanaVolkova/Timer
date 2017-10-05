@@ -1,19 +1,26 @@
 var React = require('react');
 var Clock = require('Clock');
 var CountdownForm = require('CountdownForm');
+var Controls = require('Controls');
 
 var CountDown = React.createClass({
 	getInitialState: function() {
 		return {
 			count: 0,
-			countdownState: 'stopped'
+			countdownStatus: 'stopped'
 		};
 	},
 	componentDidUpdate: function(prevProps, prevState) {
-		if(this.state.countdownState !== prevState.countdownState) {
-			switch (this.state.countdownState) {
+		if(this.state.countdownStatus !== prevState.countdownStatus) {
+			switch (this.state.countdownStatus) {
 				case 'started':
 				this.startTimer();
+				break;
+				case 'stopped':
+				this.setState({count: 0});
+				case 'paused':
+				clearInterval(this.timer)
+				this.timer = undefined;
 				break;
 			}
 		}
@@ -21,30 +28,45 @@ var CountDown = React.createClass({
 	startTimer: function() {
 		this.timer = setInterval(() => {
 			var newCount = this.state.count - 1;
-			if(newCount >= 0) {
+			if(newCount > 0) {
 				this.setState({
 					count: newCount
 				});
-			} else {
-				clearInterval(this.timer);
+			} else if(newCount = 1) {
+				this.setState({
+					count: newCount,
+					countdownStatus: 'stopped'
+				});
 			}
-			// debugger;
+			 // debugger;
 
 		}, 1000);
 	},
 	handleSetCountdown: function(seconds) {
 		this.setState({
 			count: seconds,
-			countdownState: 'started'
+			countdownStatus: 'started'
+		});
+	},
+	handleStatusChange: function(newStatus) {
+		this.setState({
+			countdownStatus: newStatus
 		});
 	},
 
 	render: function() {
-		var {count} = this.state;
+		var {count, countdownStatus} = this.state;
+		var renderControlArea = () => {
+			if (countdownStatus !== 'stopped') {
+				return <Controls countdownStatus={countdownStatus} onStatusChange={this.handleStatusChange} />
+			} else {
+				return <CountdownForm onSetCountdown={this.handleSetCountdown} />
+			}
+		};
 		return (
 			<div>
 				<Clock totalSeconds={count} />
-				<CountdownForm onSetCountdown={this.handleSetCountdown} />
+				{renderControlArea()}
 			</div>
 		);
 	}
